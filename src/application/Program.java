@@ -2,9 +2,7 @@ package application;
 
 import db.DB;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -17,9 +15,10 @@ public class Program {
         try{
             connection = DB.getConnection();
             preparedStatement = connection.prepareStatement(
-                    "insert into seller "
+                        "insert into seller "
                         + "(Name, Email, BirthDate, BaseSalary, DepartmentId) "
-                        + "values (?, ?, ?, ?, ?)");
+                        + "values (?, ?, ?, ?, ?)",
+                        Statement.RETURN_GENERATED_KEYS);
 
             preparedStatement.setString(1, "Carl Purple");
             preparedStatement.setString(2, "carl@gmail.com");
@@ -28,7 +27,20 @@ public class Program {
             preparedStatement.setInt(5, 4);
 
             int rowsAffected = preparedStatement.executeUpdate();
-            System.out.printf("Done! %d rows affected.%n", rowsAffected);
+
+            if (rowsAffected > 0){
+                ResultSet resultSet = preparedStatement.getGeneratedKeys();
+
+                while(resultSet.next()){
+                    int id = resultSet.getInt(1);
+                    System.out.println("Done! Id = " + id);
+                }
+
+                System.out.printf("Done! %d rows affected", rowsAffected);
+            }
+            else{
+                System.out.println("No rows affected");
+            }
         }
         catch (SQLException e){
             e.printStackTrace();
