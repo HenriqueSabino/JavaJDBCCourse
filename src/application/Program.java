@@ -1,35 +1,44 @@
 package application;
 
 import db.DB;
-import db.DbIntegrityException;
+import db.DbException;
 
-import java.sql.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class Program {
     public static void main(String[] args) {
         Connection connection = null;
-        PreparedStatement preparedStatement = null;
+        Statement statement = null;
 
         try{
             connection = DB.getConnection();
-            preparedStatement = connection.prepareStatement(
-                    "DELETE FROM department "
-                    + "WHERE department.Id = ?"
-            );
 
-            preparedStatement.setInt(1, 2);
+            connection.setAutoCommit(false);
 
-            int rowsAffected = preparedStatement.executeUpdate();
+            statement = connection.createStatement();
 
-            System.out.printf("Done! %d row(s) affected", rowsAffected);
+            int rowsAffected1 = statement.executeUpdate("UPDATE seller SET BaseSalary = 2090 WHERE DepartmentId = 1");
+
+            int rowsAffected2 = statement.executeUpdate("UPDATE seller SET BaseSalary = 3090 WHERE DepartmentId = 2");
+
+            connection.commit();
+
+            System.out.printf("Done! %d row(s) affected", rowsAffected1);
+            System.out.printf("Done! %d row(s) affected", rowsAffected2);
         }
         catch (SQLException e){
-            throw new DbIntegrityException(e.getMessage());
+            try {
+                connection.rollback();
+                throw new DbException("Transaction rolled back! Caused by: " + e.getMessage());
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                throw new DbException("Error trying to roll back! Caused by: " + ex.getMessage());
+            }
         }
         finally {
-            DB.closeStatement(preparedStatement);
+            DB.closeStatement(statement);
             DB.closeConnection();
         }
     }
